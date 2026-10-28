@@ -1,0 +1,163 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ produto.nome }} — OSStore{% endblock %}
+{% block meta_description %}{{ produto.nome }} ({{ produto.categoria }}) por R$ {{ produto.preco|floatformat:"2g" }}.{% if produto.descricao %} {{ produto.descricao|truncatechars:120 }}{% endif %}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_title %}{{ produto.nome }} — OSStore{% endblock %}
+{% block og_description %}{{ produto.nome }} — R$ {{ produto.preco|floatformat:"2g" }}{% endblock %}
+{% block og_image %}{% if produto.imagem %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ produto.imagem.url }}">{% endif %}{% endblock %}
+
+{% block meta_extra %}
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "Product",
+ "name": "{{ produto.nome|escapejs }}",
+ "category": "{{ produto.categoria|escapejs }}"{% if produto.imagem %},
+ "image": "{{ request.scheme }}://{{ request.get_host }}{{ produto.imagem.url|escapejs }}"{% endif %}{% if produto.descricao %},
+ "description": "{{ produto.descricao|truncatechars:300|escapejs }}"{% endif %},
+ "offers": {"@type": "Offer", "priceCurrency": "BRL", "price": "{{ produto.preco|stringformat:'0.2f' }}",
+            "availability": "https://schema.org/{% if produto.disponivel %}InStock{% else %}OutOfStock{% endif %}"}
+}
+</script>
+{% endblock %}
+
+{% block content %}
+  <nav class="migalhas" aria-label="Você está em">
+    <ol>
+      <li><a href="{% url 'home' %}">Início</a></li>
+      <li><a href="{% url 'produtos' %}">Produtos</a></li>
+      <li><a href="{% url 'produtos' %}?categoria={{ produto.categoria|urlencode }}">{{ produto.categoria }}</a></li>
+      <li aria-current="page">{{ produto.nome }}</li>
+    </ol>
+  </nav>
+
+  <div class="produto-pagina">
+    <!-- GALERIA -->
+    <div>
+      <div class="galeria-principal">
+        {% if imagens %}
+          <img id="galeria-principal-img" src="{{ imagens.0.url }}" alt="{{ imagens.0.legenda }}" width="640" height="640" fetchpriority="high">
+        {% else %}
+          <span class="texto-suave">Sem imagem</span>
+        {% endif %}
+      </div>
+      {% if imagens|length > 1 %}
+      <div class="galeria-miniaturas" aria-label="Imagens do produto">
+        {% for img in imagens %}
+          <a href="{{ img.url }}" data-galeria-thumb data-alt="{{ img.legenda }}"
+             class="{% if forloop.first %}ativa{% endif %}" {% if forloop.first %}aria-current="true"{% endif %}>
+            <img src="{{ img.url }}" alt="Ver imagem {{ forloop.counter }}: {{ img.legenda }}" loading="lazy" width="76" height="76">
+          </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- INFORMAÇÕES E COMPRA -->
+    <div class="produto-info">
+      <span class="produto-categoria">{{ produto.categoria }}</span>
+      <h1>{{ produto.nome }}</h1>
+      <div class="produto-preco">R$ {{ produto.preco|floatformat:"2g" }}</div>
+
+      {% if not produto.disponivel %}
+        <div class="disponibilidade esgotado">Esgotado</div>
+      {% elif produto.estoque_total <= 5 %}
+        <div class="disponibilidade pouco">Últimas unidades: restam {{ produto.estoque_total }}</div>
+      {% else %}
+        <div class="disponibilidade em-estoque">Em estoque</div>
+      {% endif %}
+
+      <form method="post" action="{% url 'adicionar' produto.pk %}" id="form-compra">
+        {% csrf_token %}
+
+        {% if variantes %}
+        <fieldset class="opcoes">
+          <legend>Escolha a opção</legend>
+          <div class="opcoes-lista">
+            {% for v in variantes %}
+            <div class="opcao">
+              <input type="radio" name="variante" id="var-{{ v.pk }}" value="{{ v.pk }}"
+                     data-estoque="{{ v.estoque }}" {% if v.estoque == 0 %}disabled{% endif %} required>
+              <label for="var-{{ v.pk }}">
+                {{ v.rotulo }}
+                {% if v.estoque == 0 %}<small>Esgotado</small>
+                {% elif v.estoque <= 5 %}<small>Restam {{ v.estoque }}</small>{% endif %}
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+          <p id="aviso-estoque" class="ajuda-campo" aria-live="polite"></p>
+        </fieldset>
+        {% endif %}
+
+        {% if produto.disponivel %}
+        <div class="compra-linha">
+          <div class="quantidade" role="group" aria-label="Quantidade">
+            <button type="button" data-qtd="menos" aria-label="Diminuir quantidade">
+              <svg class="icone" aria-hidden="true"><use href="#i-menos"/></svg></button>
+            <input type="number" name="quantidade" value="1" min="1" max="99" inputmode="numeric"
+                   aria-label="Quantidade" data-estoque-base="{{ produto.estoque }}">
+            <button type="button" data-qtd="mais" aria-label="Aumentar quantidade">
+              <svg class="icone" aria-hidden="true"><use href="#i-mais"/></svg></button>
+          </div>
+          <button type="submit" class="btn-osstore">
+            <svg class="icone" aria-hidden="true"><use href="#i-carrinho"/></svg> Adicionar ao carrinho</button>
+        </div>
+        {% else %}
+          <button type="button" class="btn-osstore btn-bloco" disabled>Produto esgotado</button>
+        {% endif %}
+      </form>
+
+      {% if user.is_staff %}
+        <a href="{% url 'produto_editar' produto.pk %}" class="btn-osstore-escuro btn-pequeno mt-3">Editar produto</a>
+      {% endif %}
+
+      <div class="produto-detalhes">
+        {% if produto.descricao %}
+        <section aria-labelledby="t-desc">
+          <h2 id="t-desc">Descrição</h2>
+          <p>{{ produto.descricao }}</p>
+        </section>
+        {% endif %}
+
+        {% if produto.lista_caracteristicas or produto.material %}
+        <section aria-labelledby="t-car">
+          <h2 id="t-car">Características</h2>
+          {% if produto.lista_caracteristicas %}
+          <ul class="lista-caracteristicas">
+            {% for item in produto.lista_caracteristicas %}<li>{{ item }}</li>{% endfor %}
+          </ul>
+          {% endif %}
+          {% if produto.material %}<p class="{% if produto.lista_caracteristicas %}mt-2{% endif %}"><strong>Material:</strong> {{ produto.material }}</p>{% endif %}
+        </section>
+        {% endif %}
+
+        {% if produto.linhas_tabela_medidas %}
+        <section aria-labelledby="t-med">
+          <h2 id="t-med">Tabela de medidas</h2>
+          <div class="table-responsive">
+            <table class="tabela-medidas">
+              {% for linha in produto.linhas_tabela_medidas %}
+                {% if forloop.first %}<thead><tr>{% for c in linha %}<th scope="col">{{ c }}</th>{% endfor %}</tr></thead><tbody>
+                {% else %}<tr>{% for c in linha %}<td>{{ c }}</td>{% endfor %}</tr>{% endif %}
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if relacionados %}
+  <section class="mt-5 pt-3" aria-labelledby="t-rel">
+    <div class="secao-cabecalho">
+      <div><span class="kicker">Continue explorando</span><h2 id="t-rel">Produtos relacionados</h2></div>
+    </div>
+    <div class="row g-4">
+      {% for produto in relacionados %}
+        <div class="col-12 col-sm-6 col-lg-3">{% include 'core/produto_card.html' %}</div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+{% endblock %}

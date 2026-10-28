@@ -1,0 +1,111 @@
+{% extends 'core/base.html' %}
+{% block title %}{% if categoria_atual %}{{ categoria_atual }} — {% endif %}Produtos — OSStore{% endblock %}
+{% block meta_description %}{% if categoria_atual %}{{ categoria_atual }} de jiu-jítsu na OSStore.{% else %}Catálogo de equipamentos de jiu-jítsu da OSStore.{% endif %} Busque, filtre por categoria e preço.{% endblock %}
+{% block og_title %}{% if categoria_atual %}{{ categoria_atual }} — {% endif %}Produtos — OSStore{% endblock %}
+{# páginas de busca/filtro/paginação não devem competir entre si nos buscadores #}
+{% block meta_extra %}{% if filtros_ativos or pagina.number > 1 %}<meta name="robots" content="noindex, follow">{% endif %}{% endblock %}
+
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
+    <div class="titulo-pagina mb-0">
+      <span class="kicker">Catálogo</span>
+      <h1>{% if categoria_atual %}{{ categoria_atual }}{% else %}Nossos produtos{% endif %}</h1>
+    </div>
+    {% if user.is_authenticated and user.is_staff %}
+      <a href="{% url 'produto_novo' %}" class="btn-osstore">
+        <svg class="icone" aria-hidden="true"><use href="#i-mais"/></svg> Cadastrar produto</a>
+    {% endif %}
+  </div>
+
+  <form class="filtros" method="get" action="{% url 'produtos' %}" aria-label="Filtros do catálogo">
+    <div class="filtros-grade">
+      <div class="col-cheio">
+        <label for="f-q">Buscar</label>
+        <input class="form-control" id="f-q" type="search" name="q" value="{{ q }}" placeholder="Nome, categoria ou descrição">
+      </div>
+      <div>
+        <label for="f-categoria">Categoria</label>
+        <select class="form-select" id="f-categoria" name="categoria">
+          <option value="">Todas</option>
+          {% for c in categorias %}
+            <option value="{{ c.categoria }}" {% if c.categoria|lower == categoria_atual|lower and categoria_atual %}selected{% endif %}>{{ c.categoria }} ({{ c.total }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="f-min">Preço mín. (R$)</label>
+        <input class="form-control" id="f-min" type="number" name="preco_min" min="0" step="0.01" inputmode="decimal" value="{{ preco_min }}">
+      </div>
+      <div>
+        <label for="f-max">Preço máx. (R$)</label>
+        <input class="form-control" id="f-max" type="number" name="preco_max" min="0" step="0.01" inputmode="decimal" value="{{ preco_max }}">
+      </div>
+      <div>
+        <label for="f-ordem">Ordenar por</label>
+        <select class="form-select" id="f-ordem" name="ordem">
+          {% for chave, rotulo in ordenacoes %}
+            <option value="{{ chave }}" {% if chave == ordem %}selected{% endif %}>{{ rotulo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filtros-acoes col-cheio">
+        <button type="submit" class="btn-osstore btn-pequeno">
+          <svg class="icone" aria-hidden="true"><use href="#i-filtro"/></svg> Aplicar</button>
+        {% if filtros_ativos or ordem != 'nome' %}
+          <a href="{% url 'produtos' %}" class="btn-osstore-outline btn-pequeno">Limpar</a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+
+  {% if categorias %}
+  <nav class="chips" aria-label="Categorias">
+    <a class="chip {% if not categoria_atual %}ativo{% endif %}" href="{% url 'produtos' %}"
+       {% if not categoria_atual %}aria-current="true"{% endif %}>Todas</a>
+    {% for c in categorias %}
+      <a class="chip {% if c.categoria|lower == categoria_atual|lower and categoria_atual %}ativo{% endif %}"
+         href="{% url 'produtos' %}?categoria={{ c.categoria|urlencode }}">{{ c.categoria }} <small>{{ c.total }}</small></a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  <p class="resumo-resultados" role="status">
+    {% if total %}{{ total }} produto{{ total|pluralize }} encontrado{{ total|pluralize }}{% if filtros_ativos %} com os filtros aplicados{% endif %}.
+    {% else %}Nenhum resultado.{% endif %}
+  </p>
+
+  <h2 class="visually-hidden">Lista de produtos</h2>
+  <div class="row g-4">
+    {% for produto in produtos %}
+      <div class="col-12 col-sm-6 col-lg-3">
+        {% include 'core/produto_card.html' %}
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="estado-vazio">
+          <svg class="icone" aria-hidden="true"><use href="#i-busca"/></svg>
+          <p class="mb-3">Nenhum produto encontrado{% if filtros_ativos %} para esses filtros{% endif %}.</p>
+          {% if filtros_ativos %}
+            <a href="{% url 'produtos' %}" class="btn-osstore-escuro">Limpar filtros</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if pagina.has_other_pages %}
+  <nav class="paginacao" aria-label="Paginação">
+    {% if pagina.has_previous %}
+      <a class="btn-osstore-outline btn-pequeno" rel="prev"
+         href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ pagina.previous_page_number }}">
+        <svg class="icone" aria-hidden="true"><use href="#i-seta-esq"/></svg> Anterior</a>
+    {% endif %}
+    <span class="atual">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}
+      <a class="btn-osstore-outline btn-pequeno" rel="next"
+         href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ pagina.next_page_number }}">
+        Próxima <svg class="icone" aria-hidden="true"><use href="#i-seta"/></svg></a>
+    {% endif %}
+  </nav>
+  {% endif %}
+{% endblock %}

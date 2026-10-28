@@ -1,0 +1,166 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}OSStore — Equipamentos de jiu-jítsu{% endblock %}
+{% block meta_description %}Seu jogo. Sua evolução. Equipamentos para quem leva o tatame a sério: kimonos, rashguards, faixas e mais.{% endblock %}
+{% block og_title %}OSStore — Seu jogo. Sua evolução.{% endblock %}
+{% block og_description %}Equipamentos para quem leva o tatame a sério.{% endblock %}
+
+{% block content_full %}
+
+  <!-- HERO -->
+  <section class="hero{% if tem_hero_foto %} hero--foto{% endif %}"
+           {% if tem_hero_foto %}style="background-image: url('{% static 'core/img/hero.jpg' %}')"{% endif %}
+           aria-labelledby="hero-titulo">
+    <div class="container hero-grid">
+      <div>
+        <span class="hero-kicker">Jiu-jítsu · Equipamentos</span>
+        <h1 id="hero-titulo">Seu jogo.<span>Sua evolução.</span></h1>
+        <p class="hero-sub">Equipamentos para quem leva o tatame a sério.</p>
+        <div class="hero-botoes">
+          <a href="{% url 'produtos' %}" class="btn-osstore">Comprar agora</a>
+          <a href="#categorias" class="btn-osstore-claro">Explorar coleção</a>
+        </div>
+      </div>
+
+      {% if destaque %}
+      <figure class="hero-figura m-0">
+        <a href="{% url 'produto_detalhe' destaque.pk %}">
+          <img src="{{ destaque.imagem.url }}" alt="{{ destaque.nome }}" width="440" height="440" fetchpriority="high">
+          <figcaption>
+            <span class="nome">{{ destaque.nome }}</span>
+            <span class="preco-mini">R$ {{ destaque.preco|floatformat:"2g" }}</span>
+          </figcaption>
+        </a>
+      </figure>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- CATEGORIAS -->
+  {% if categorias %}
+  <section class="secao" id="categorias" aria-labelledby="categorias-titulo">
+    <div class="container">
+      <div class="secao-cabecalho">
+        <div>
+          <span class="kicker">Explore</span>
+          <h2 id="categorias-titulo">Categorias</h2>
+        </div>
+        <a class="link-secao" href="{% url 'produtos' %}">Ver tudo
+          <svg class="icone" aria-hidden="true"><use href="#i-seta"/></svg></a>
+      </div>
+      <div class="grade-categorias">
+        {% for c in categorias %}
+        <a class="categoria-card" href="{% url 'produtos' %}?categoria={{ c.nome|urlencode }}">
+          {% if c.produto.imagem %}
+            <img src="{{ c.produto.imagem.url }}" alt="" loading="lazy" width="320" height="240">
+          {% else %}
+            <div class="sem-img"></div>
+          {% endif %}
+          <span class="categoria-rotulo">
+            <strong>{{ c.nome }}</strong>
+            <small>{{ c.total }} produto{{ c.total|pluralize }}</small>
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- MAIS VENDIDOS (só com vendas reais) -->
+  {% if mais_vendidos %}
+  <section class="secao pt-0" aria-labelledby="vendidos-titulo">
+    <div class="container">
+      <div class="secao-cabecalho">
+        <div>
+          <span class="kicker">Favoritos dos clientes</span>
+          <h2 id="vendidos-titulo">Mais vendidos</h2>
+        </div>
+      </div>
+      <div class="row g-4">
+        {% for produto in mais_vendidos %}
+          <div class="col-12 col-sm-6 col-lg-3">{% include 'core/produto_card.html' %}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- NOVIDADES -->
+  <section class="secao {% if categorias %}pt-0{% endif %}" aria-labelledby="novidades-titulo">
+    <div class="container">
+      <div class="secao-cabecalho">
+        <div>
+          <span class="kicker">Acabou de chegar</span>
+          <h2 id="novidades-titulo">Novidades</h2>
+        </div>
+        <a class="link-secao" href="{% url 'produtos' %}?ordem=novos">Ver todas
+          <svg class="icone" aria-hidden="true"><use href="#i-seta"/></svg></a>
+      </div>
+      <div class="row g-4">
+        {% for produto in novidades %}
+          <div class="col-12 col-sm-6 col-lg-3">{% include 'core/produto_card.html' %}</div>
+        {% empty %}
+          <div class="col-12">
+            <div class="estado-vazio">
+              <svg class="icone" aria-hidden="true"><use href="#i-pacote"/></svg>
+              <p class="mb-0">Nenhum produto cadastrado ainda.</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- BENEFÍCIOS (apenas o que o sistema realmente faz) -->
+  <section class="secao secao-escura" aria-labelledby="beneficios-titulo">
+    <div class="container">
+      <h2 id="beneficios-titulo" class="visually-hidden">Como funciona a loja</h2>
+      <div class="beneficios">
+        <div class="beneficio">
+          <svg class="icone" aria-hidden="true"><use href="#i-pacote"/></svg>
+          <h3>Estoque em tempo real</h3>
+          <p>A disponibilidade de cada produto e de cada tamanho vem direto do estoque da loja.</p>
+        </div>
+        <div class="beneficio">
+          <svg class="icone" aria-hidden="true"><use href="#i-lista"/></svg>
+          <h3>Pedidos acompanhados</h3>
+          <p>Seu histórico de compras e o status de cada pedido ficam na sua conta.</p>
+        </div>
+        <div class="beneficio">
+          <svg class="icone" aria-hidden="true"><use href="#i-carrinho"/></svg>
+          <h3>Carrinho que não se perde</h3>
+          <p>Seus itens continuam salvos enquanto você navega, mesmo antes de entrar na conta.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTITUCIONAL -->
+  <section class="secao" aria-labelledby="marca-titulo">
+    <div class="container institucional">
+      <div class="marca-grande" aria-hidden="true">OS<span>Store</span></div>
+      <div>
+        <span class="kicker">A marca</span>
+        <h2 id="marca-titulo">Feita para o tatame</h2>
+        <p>
+          A OSStore é uma loja de equipamentos de jiu-jítsu.
+          {% if total_produtos %}Hoje o catálogo reúne {{ total_produtos }} produto{{ total_produtos|pluralize }}
+          em {{ categorias|length }} categoria{{ categorias|length|pluralize }}.{% endif %}
+        </p>
+        <a class="link-secao" href="{% url 'sobre' %}">Conheça a loja
+          <svg class="icone" aria-hidden="true"><use href="#i-seta"/></svg></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAMADA FINAL -->
+  <section class="chamada-final" aria-labelledby="cta-titulo">
+    <div class="container">
+      <h2 id="cta-titulo">Pronto para o próximo treino?</h2>
+      <a href="{% url 'produtos' %}" class="btn-osstore-escuro">Explorar os produtos</a>
+    </div>
+  </section>
+
+{% endblock %}

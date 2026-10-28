@@ -1,0 +1,120 @@
+{% extends 'core/base.html' %}
+{% block title %}Meu carrinho | OSStore{% endblock %}
+{% block meta_extra %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block content %}
+  <div class="titulo-pagina">
+    <span class="kicker">Compra</span>
+    <h1>Meu carrinho</h1>
+  </div>
+
+  {% if itens %}
+  <div class="row g-4">
+
+    <!-- Itens -->
+    <div class="col-12 col-lg-8">
+      <h2 class="visually-hidden">Itens do carrinho</h2>
+      {% for item in itens %}
+      <article class="item-carrinho">
+
+        <div class="item-imagem">
+          {% if item.produto.imagem %}
+            <img src="{{ item.produto.imagem.url }}" alt="" width="96" height="96">
+          {% endif %}
+        </div>
+
+        <div class="item-info">
+          <span class="produto-categoria">{{ item.produto.categoria }}</span>
+          <h3 class="item-nome"><a href="{% url 'produto_detalhe' item.produto.pk %}">{{ item.produto.nome }}</a></h3>
+          {% if item.variante %}<div class="item-variante">{{ item.variante.rotulo }}</div>{% endif %}
+          <div class="item-unitario">R$ {{ item.produto.preco|floatformat:"2g" }} cada</div>
+
+          {% if item.sem_estoque %}
+            <div class="item-aviso" role="alert">
+              {% if item.estoque == 0 %}
+                Este item esgotou. Remova-o para continuar.
+              {% else %}
+                Restam apenas {{ item.estoque }} em estoque. Ajuste a quantidade.
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <form method="post" action="{% url 'alterar_carrinho' item.produto.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="variante" value="{{ item.variante_id }}">
+            <button type="submit" name="acao" value="remover" class="item-remover">
+              <svg class="icone" aria-hidden="true"><use href="#i-lixeira"/></svg>
+              Remover<span class="visually-hidden"> {{ item.produto.nome }}</span>
+            </button>
+          </form>
+        </div>
+
+        <form method="post" action="{% url 'alterar_carrinho' item.produto.pk %}" class="item-qtd">
+          {% csrf_token %}
+          <input type="hidden" name="variante" value="{{ item.variante_id }}">
+          <button type="submit" name="acao" value="menos" aria-label="Diminuir quantidade"
+                  {% if item.quantidade <= 1 %}disabled{% endif %}>
+            <svg class="icone" aria-hidden="true"><use href="#i-menos"/></svg></button>
+          <span class="qtd-valor" aria-live="polite">{{ item.quantidade }}</span>
+          <button type="submit" name="acao" value="mais" aria-label="Aumentar quantidade"
+                  {% if item.quantidade >= item.estoque %}disabled{% endif %}>
+            <svg class="icone" aria-hidden="true"><use href="#i-mais"/></svg></button>
+        </form>
+
+        <div class="item-subtotal">R$ {{ item.subtotal|floatformat:"2g" }}</div>
+      </article>
+      {% endfor %}
+    </div>
+
+    <!-- Resumo -->
+    <aside class="col-12 col-lg-4" aria-labelledby="resumo-titulo">
+      <div class="resumo-pedido">
+        <h2 id="resumo-titulo">Resumo do pedido</h2>
+
+        <div class="resumo-linha">
+          <span>{{ quantidade_total }} ite{{ quantidade_total|pluralize:"m,ns" }}</span>
+          <span>R$ {{ total|floatformat:"2g" }}</span>
+        </div>
+
+        <div class="resumo-total">
+          <span>Total</span>
+          <strong>R$ {{ total|floatformat:"2g" }}</strong>
+        </div>
+
+        {% if user.is_authenticated %}
+          <form method="post" action="{% url 'finalizar' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-osstore btn-bloco" {% if tem_problema %}disabled{% endif %}>
+              Finalizar pedido
+            </button>
+          </form>
+          {% if tem_problema %}
+            <p class="resumo-nota">Ajuste os itens com aviso para poder finalizar.</p>
+          {% else %}
+            <p class="resumo-nota">O pedido será registrado como pendente. O pagamento ainda não é processado pelo site.</p>
+          {% endif %}
+        {% else %}
+          <a href="{% url 'login' %}?next={% url 'ver_carrinho' %}" class="btn-osstore btn-bloco">
+            Entrar para finalizar
+          </a>
+          <p class="resumo-nota">
+            Você precisa estar logado para concluir a compra.
+            Seus itens continuam salvos no carrinho.
+          </p>
+        {% endif %}
+
+        <a href="{% url 'produtos' %}" class="btn-osstore-outline btn-bloco mt-2">Continuar comprando</a>
+      </div>
+    </aside>
+
+  </div>
+
+  {% else %}
+  <div class="estado-vazio">
+    <svg class="icone" aria-hidden="true"><use href="#i-carrinho"/></svg>
+    <h2 class="h4">Seu carrinho está vazio</h2>
+    <p>Que tal dar uma olhada nos nossos produtos?</p>
+    <a href="{% url 'produtos' %}" class="btn-osstore">Ver produtos</a>
+  </div>
+  {% endif %}
+{% endblock %}

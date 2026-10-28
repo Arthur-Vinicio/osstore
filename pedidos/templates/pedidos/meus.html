@@ -1,0 +1,37 @@
+{% extends 'core/base.html' %}
+{% block title %}Meus pedidos | OSStore{% endblock %}
+{% block meta_extra %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block content %}
+  <header class="os-hero">
+    <div class="os-kicker">Minha conta</div>
+    <h1>Meus <span>pedidos</span></h1>
+    <p>Acompanhe suas compras e consulte o que já pediu.</p>
+  </header>
+
+  {% for pedido in pedidos %}
+    <article class="os-card pedido-linha">
+      <div>
+        <div class="pedido-numero">Pedido #{{ pedido.pk }}</div>
+        <div class="pedido-data">{{ pedido.criado_em|date:"d/m/Y, H:i" }}</div>
+      </div>
+
+      <span class="os-selo status-{{ pedido.status }}">{{ pedido.get_status_display }}</span>
+
+      <div class="pedido-itens">
+        {% with n=pedido.itens.all|length %}{{ n }} ite{{ n|pluralize:"m,ns" }}{% endwith %}
+      </div>
+
+      <div class="pedido-total">R$ {{ pedido.total|floatformat:"2g" }}</div>
+
+      <a href="{% url 'pedido_detalhe' pedido.pk %}" class="btn-osstore-outline btn-pequeno">Ver detalhes</a>
+    </article>
+  {% empty %}
+    <div class="estado-vazio">
+      <svg class="icone" aria-hidden="true"><use href="#i-pacote"/></svg>
+      <h2 class="h4">Você ainda não fez nenhum pedido</h2>
+      <p>Quando finalizar uma compra, ela aparecerá aqui.</p>
+      <a href="{% url 'produtos' %}" class="btn-osstore">Explorar produtos</a>
+    </div>
+  {% endfor %}
+{% endblock %}

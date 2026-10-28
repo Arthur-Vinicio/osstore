@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+{% block title %}Entrar | OSStore{% endblock %}
+{% block meta_extra %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Entrar na <span>OSStore</span></h1>
+  <p class="auth-sub">Acesse sua conta para finalizar compras e acompanhar seus pedidos.</p>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+      {% for erro in form.non_field_errors %}{{ erro }}{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+    <div class="campo">
+      <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+      {{ form.username }}
+      {% for erro in form.username.errors %}<div class="erro-campo">{{ erro }}</div>{% endfor %}
+    </div>
+
+    <div class="campo">
+      <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+      {{ form.password }}
+      {% for erro in form.password.errors %}<div class="erro-campo">{{ erro }}</div>{% endfor %}
+    </div>
+
+    <button type="submit" class="btn-osstore">Entrar</button>
+    <p class="auth-rodape">
+    Ainda não tem conta?
+    <a href="{% url 'cadastro' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Cadastre-se</a>
+    </p>
+  </form>
+
+  <p class="auth-rodape"><a href="{% url 'produtos' %}">← Voltar para a loja</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% load static %}<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}OSStore — Equipamentos de jiu-jítsu{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Kimonos, rashguards, faixas e equipamentos de jiu-jítsu na OSStore.{% endblock %}">
+  <meta name="theme-color" content="#0b0b0c">
+  <link rel="canonical" href="{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}">
+  <meta property="og:site_name" content="OSStore">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}OSStore — Equipamentos de jiu-jítsu{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Kimonos, rashguards, faixas e equipamentos de jiu-jítsu.{% endblock %}">
+  {% block og_image %}{% endblock %}
+  {% block meta_extra %}{% endblock %}
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{% static 'core/css/estilo.css' %}">
+</head>
+<body>
+  {% include 'core/icones.html' %}
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+
+  {% with pagina=request.resolver_match.url_name %}
+  <header class="site-header">
+    <div class="container header-main">
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="nav-principal">
+        <svg class="icone" aria-hidden="true"><use href="#i-menu"/></svg>
+        <span class="visually-hidden">Abrir menu</span>
+      </button>
+
+      <a class="logo" href="{% url 'home' %}">
+        <img src="{% static 'core/img/OSStore.jpg' %}" alt="OSStore — página inicial" width="128" height="49">
+      </a>
+
+      <form class="busca" role="search" method="get" action="{% url 'produtos' %}">
+        <label class="visually-hidden" for="busca-q">Buscar produtos</label>
+        <input id="busca-q" type="search" name="q" value="{{ request.GET.q }}" placeholder="Buscar produtos" autocomplete="off">
+        <button type="submit" aria-label="Buscar">
+          <svg class="icone" aria-hidden="true"><use href="#i-busca"/></svg>
+        </button>
+      </form>
+
+      <div class="header-acoes">
+        {% if user.is_authenticated %}
+        <a class="acao-link" href="{% url 'painel' %}">
+          <svg class="icone" aria-hidden="true"><use href="#i-usuario"/></svg>
+          <span class="acao-rotulo">Minha conta</span>
+        </a>
+        {% else %}
+        <a class="acao-link" href="{% url 'login' %}">
+          <svg class="icone" aria-hidden="true"><use href="#i-usuario"/></svg>
+          <span class="acao-rotulo">Entrar</span>
+        </a>
+        {% endif %}
+        <a class="acao-link" href="{% url 'ver_carrinho' %}">
+          <svg class="icone" aria-hidden="true"><use href="#i-carrinho"/></svg>
+          <span class="acao-rotulo">Carrinho</span>
+          {% if carrinho_qtd %}
+          <span class="contador-carrinho" aria-hidden="true">{{ carrinho_qtd }}</span>
+          <span class="visually-hidden">{{ carrinho_qtd }} ite{{ carrinho_qtd|pluralize:"m,ns" }} no carrinho</span>
+          {% endif %}
+        </a>
+      </div>
+    </div>
+
+    <nav class="nav-principal" id="nav-principal" aria-label="Principal">
+      <div class="container">
+        <ul class="nav-lista">
+          <li><a href="{% url 'home' %}" {% if pagina == 'home' %}class="ativo" aria-current="page"{% endif %}>Início</a></li>
+          <li><a href="{% url 'produtos' %}" {% if pagina == 'produtos' and not request.GET.categoria %}class="ativo" aria-current="page"{% endif %}>Produtos</a></li>
+          {% for nome in menu_categorias|slice:":4" %}
+          <li><a href="{% url 'produtos' %}?categoria={{ nome|urlencode }}"
+                 {% if request.GET.categoria == nome %}class="ativo"{% endif %}>{{ nome }}</a></li>
+          {% endfor %}
+          <li><a href="{% url 'sobre' %}" {% if pagina == 'sobre' %}class="ativo" aria-current="page"{% endif %}>Sobre</a></li>
+        </ul>
+        <ul class="nav-lista">
+          {% if user.is_authenticated %}
+          <li><a href="{% url 'meus_pedidos' %}" {% if pagina == 'meus_pedidos' or pagina == 'pedido_detalhe' %}class="ativo"{% endif %}>Meus pedidos</a></li>
+          {% if user.is_staff %}
+          <li><a href="{% url 'admin:index' %}">Administração</a></li>
+          {% endif %}
+          <li>
+            <!-- logout precisa ser POST, por isso um formulário -->
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="link-botao">Sair</button>
+            </form>
+          </li>
+          {% else %}
+          <li><a href="{% url 'cadastro' %}" {% if pagina == 'cadastro' %}class="ativo"{% endif %}>Criar conta</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </nav>
+  </header>
+  {% endwith %}
+
+  <main id="conteudo">
+    {% if messages %}
+    <div class="container pt-4">
+      <div class="mensagens">
+        {% for message in messages %}
+          <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %}"
+               role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% block content_full %}
+    <div class="container py-4">
+      {% block content %}{% endblock %}
+    </div>
+    {% endblock %}
+  </main>
+
+  <footer class="rodape">
+    <div class="container">
+      <div class="rodape-grade">
+        <div>
+          <div class="rodape-marca">OS<span>Store</span></div>
+          <p class="rodape-texto">Equipamentos de jiu-jítsu.</p>
+        </div>
+        <div>
+          <h2>Loja</h2>
+          <ul>
+            <li><a href="{% url 'produtos' %}">Todos os produtos</a></li>
+            {% for nome in menu_categorias %}
+            <li><a href="{% url 'produtos' %}?categoria={{ nome|urlencode }}">{{ nome }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div>
+          <h2>Minha conta</h2>
+          <ul>
+            {% if user.is_authenticated %}
+            <li><a href="{% url 'painel' %}">Painel</a></li>
+            <li><a href="{% url 'meus_pedidos' %}">Meus pedidos</a></li>
+            {% else %}
+            <li><a href="{% url 'login' %}">Entrar</a></li>
+            <li><a href="{% url 'cadastro' %}">Criar conta</a></li>
+            {% endif %}
+            <li><a href="{% url 'ver_carrinho' %}">Carrinho</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>A loja</h2>
+          <ul>
+            <li><a href="{% url 'sobre' %}">Sobre a OSStore</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="rodape-base">
+        <span>© {% now "Y" %} OSStore</span>
+        <span>Projeto desenvolvido no curso de Python do SENAC</span>
+      </div>
+    </div>
+  </footer>
+
+  {% if loja_whatsapp %}
+  <a class="whatsapp-flutuante" href="https://wa.me/{{ loja_whatsapp }}?text=Ol%C3%A1%21%20Vim%20pelo%20site%20da%20OSStore."
+     target="_blank" rel="noopener">
+    <svg class="icone" aria-hidden="true"><use href="#i-conversa"/></svg>
+    <span>WhatsApp<span class="visually-hidden"> (abre em uma nova aba)</span></span>
+  </a>
+  {% endif %}
+
+  <script src="{% static 'core/js/site.js' %}" defer></script>
+</body>
+</html>

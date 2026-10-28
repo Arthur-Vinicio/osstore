@@ -1,0 +1,87 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Minha Conta | OSStore{% endblock %}
+{% block meta_extra %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block content %}
+<section class="painel-banner">
+  <h1>Olá, <span>{{ usuario.username }}</span>!</h1>
+  <p>Bem-vindo à sua área do cliente. Acompanhe seus pedidos e encontre seu próximo equipamento.</p>
+</section>
+
+<div class="row g-4">
+
+  <!-- Menu lateral -->
+  <aside class="col-12 col-md-4 col-lg-3">
+    <nav class="painel-menu" aria-label="Minha conta">
+      <h2>Minha conta</h2>
+
+      <a href="{% url 'painel' %}" class="painel-link ativo" aria-current="page">
+        <svg class="icone" aria-hidden="true"><use href="#i-usuario"/></svg> Resumo
+      </a>
+      <a href="{% url 'meus_pedidos' %}" class="painel-link">
+        <svg class="icone" aria-hidden="true"><use href="#i-lista"/></svg> Meus pedidos
+      </a>
+      <a href="{% url 'ver_carrinho' %}" class="painel-link">
+        <svg class="icone" aria-hidden="true"><use href="#i-carrinho"/></svg>
+        Meu carrinho{% if carrinho_qtd %} ({{ carrinho_qtd }}){% endif %}
+      </a>
+      <a href="{% url 'password_change' %}" class="painel-link">
+        <svg class="icone" aria-hidden="true"><use href="#i-pacote"/></svg> Alterar senha
+      </a>
+
+      <hr class="painel-divisor">
+
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="painel-link">Sair da conta</button>
+      </form>
+    </nav>
+  </aside>
+
+  <!-- Conteúdo principal -->
+  <div class="col-12 col-md-8 col-lg-9">
+    <div class="row g-4">
+
+      <!-- Pedidos -->
+      <section class="col-12 col-lg-7" aria-labelledby="painel-pedidos">
+        <div class="painel-card">
+          <h2 id="painel-pedidos">Pedidos recentes</h2>
+
+          {% if pedidos_recentes %}
+            <p>Você tem {{ total_pedidos }} pedido{{ total_pedidos|pluralize }}. Os mais recentes:</p>
+
+            <div class="mb-3">
+              {% for pedido in pedidos_recentes %}
+                <a href="{% url 'pedido_detalhe' pedido.pk %}" class="painel-pedido">
+                  <span>
+                    #{{ pedido.pk }} · {{ pedido.criado_em|date:"d/m/Y" }}
+                    <span class="os-selo status-{{ pedido.status }} ms-2">{{ pedido.get_status_display }}</span>
+                  </span>
+                  <span>R$ {{ pedido.total|floatformat:"2g" }}</span>
+                </a>
+              {% endfor %}
+            </div>
+
+            <a href="{% url 'meus_pedidos' %}" class="btn-osstore-escuro btn-pequeno">Ver todos os pedidos</a>
+          {% else %}
+            <p>Você ainda não fez nenhum pedido. Quando comprar, o histórico e o status aparecerão aqui.</p>
+            <a href="{% url 'produtos' %}" class="btn-osstore btn-pequeno">Explorar produtos</a>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- Dados da conta -->
+      <section class="col-12 col-lg-5" id="dados" aria-labelledby="painel-dados">
+        <div class="painel-card">
+          <h2 id="painel-dados">Dados da conta</h2>
+          <p><strong>Usuário:</strong> {{ usuario.username }}</p>
+          <p><strong>E-mail:</strong> {{ usuario.email|default:"Não informado" }}</p>
+          <p class="mb-0"><strong>Membro desde:</strong> {{ usuario.date_joined|date:"d/m/Y" }}</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

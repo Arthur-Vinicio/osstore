@@ -1,0 +1,46 @@
+{% comment %}Card de produto. Espera a variável `produto` (com prefetch de variantes).{% endcomment %}
+<article class="card-produto {% if not produto.disponivel %}esgotado{% endif %}">
+  <a class="produto-imagem" href="{% url 'produto_detalhe' produto.pk %}" tabindex="-1" aria-hidden="true">
+    {% if produto.imagem %}
+      <img src="{{ produto.imagem.url }}" alt="" loading="lazy" width="400" height="400">
+    {% else %}
+      <span class="produto-sem-imagem">Sem imagem</span>
+    {% endif %}
+    {% if not produto.disponivel %}
+      <span class="produto-selo esgotado">Esgotado</span>
+    {% elif produto.estoque_total <= 5 %}
+      <span class="produto-selo">Últimas unidades</span>
+    {% endif %}
+  </a>
+
+  <div class="card-corpo">
+    <span class="produto-categoria">{{ produto.categoria }}</span>
+    <h3 class="card-titulo"><a href="{% url 'produto_detalhe' produto.pk %}">{{ produto.nome }}</a></h3>
+
+    <p class="preco">R$ {{ produto.preco|floatformat:"2g" }}</p>
+
+    <div class="card-acoes {% if produto.disponivel and not produto.tem_variantes %}card-acoes--duplo{% endif %}">
+      {% if not produto.disponivel %}
+        <a href="{% url 'produto_detalhe' produto.pk %}" class="btn-osstore-outline">Esgotado · ver detalhes</a>
+      {% elif produto.tem_variantes %}
+        <!-- precisa escolher tamanho/cor: a escolha acontece na página do produto -->
+        <a href="{% url 'produto_detalhe' produto.pk %}" class="btn-osstore">Escolher opções</a>
+      {% else %}
+        <!-- adicionar ao carrinho: precisa ser POST (muda o carrinho) -->
+        <form method="post" action="{% url 'adicionar' produto.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-osstore">
+            <svg class="icone" aria-hidden="true"><use href="#i-carrinho"/></svg>
+            Adicionar
+            <span class="visually-hidden">{{ produto.nome }} ao carrinho</span>
+          </button>
+        </form>
+        <a href="{% url 'produto_detalhe' produto.pk %}" class="btn-osstore-outline">Detalhes<span class="visually-hidden"> de {{ produto.nome }}</span></a>
+      {% endif %}
+
+      {% if user.is_staff %}
+        <a href="{% url 'produto_editar' produto.pk %}" class="btn-osstore-escuro card-acoes-editar">Editar produto</a>
+      {% endif %}
+    </div>
+  </div>
+</article>

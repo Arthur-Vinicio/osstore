@@ -1,0 +1,26 @@
+{% extends 'core/base.html' %}
+{% block title %}Criar conta | OSStore{% endblock %}
+{% block meta_extra %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Criar <span>conta</span></h1>
+  <p class="auth-sub">Cadastre-se para comprar e acompanhar seus pedidos.</p>
+
+  <form method="post">
+    {% csrf_token %}
+    {% for campo in form %}
+      <div class="campo">
+        <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+        {{ campo }}
+        {% for erro in campo.errors %}<div class="erro-campo">{{ erro }}</div>{% endfor %}
+        {% if campo.help_text %}<div class="ajuda-campo">{{ campo.help_text|safe }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn-osstore">Criar conta</button>
+  </form>
+
+  <p class="auth-rodape">
+    Já tem conta? <a href="{% url 'login' %}">Entrar</a>
+  </p>
+</div>
+{% endblock %}
